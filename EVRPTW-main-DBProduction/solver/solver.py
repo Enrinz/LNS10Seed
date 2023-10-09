@@ -14,7 +14,30 @@ from simulator.simulator import Simulator
 from solver.ALNS_operators import *
 from solver.plotter.plotter import Plotter
 from solver.solution import Solution
+import os
+import keras
+from keras.preprocessing.text import Tokenizer
+from keras_preprocessing.sequence import pad_sequences
 
+from datetime import datetime
+
+path_soluzione_iniziale="soluzione iniziale.txt"
+path_append="soluzione append.txt"
+
+def clean(content):
+    X=content.replace('\'','').replace('[','').replace(']','').replace(',','')
+    print(X)
+    a=[]
+    a.append(X)
+
+    tokenizer = Tokenizer(num_words=150)
+    tokenizer.fit_on_texts(a)
+
+    maxlen = 270
+    a = tokenizer.texts_to_sequences(a)
+    a = pad_sequences(a, padding='post', maxlen=maxlen)
+    #print(a[0])
+    return a[0]
 moves_list = {
         "station" : {
             "destroy" : {
@@ -443,15 +466,14 @@ class Solver:
                 vectordiststation.append(temp)
             write_final_row["Avg_Customer_station_min_dist"] = statistics.mean(vectordiststation)
             write_final_row["Var_Customer_station_min_dist"] = statistics.variance(vectordiststation)
-            '''
             # Avg_Customer_deposit_dist & Var_Customer_deposit_dist
             vectordistdeposit = []
             for c1 in self.instance.customers:
-                dist=(math.sqrt(pow((c1['x']-self.instance.start_point['x']),2)+pow((c1['y']-self.instance.start_point['y']),2)))
+                dist=(math.sqrt(pow((c1['x']-self.instance.depot_point['x']),2)+pow((c1['y']-self.instance.depot_point['y']),2)))
                 vectordistdeposit.append(dist)
             write_final_row["Avg_Customer_deposit_dist"] = statistics.mean(vectordistdeposit)
             write_final_row["Var_Customer_deposit_dist"] = statistics.variance(vectordistdeposit)
-            '''
+            
             #-------------------------------------------------------------------------------------
             
             line=0
@@ -630,13 +652,54 @@ class Solver:
         for i in range(len(self.operators[which + "_repair"]["operators"])):
             self.operators[which + "_repair"]["score"][i] = 0
 
-    def _select_method(self, op_list, weights):
+    def _select_method_0(self, op_list, weights):
         # select operator to be applied
         pos = random.choices(
             range(len(op_list)), #restituisce una sequenza di numeri che vanno da 0 a len(op_list) - 1
             weights
         )[0]
         return op_list[pos], pos 
+    
+    #random pesato delle migliori (>0.5)
+    def _select_method_1(self, op_list, weights):
+        with open(path_soluzione_iniziale, 'r') as file:
+            content = file.read()
+        #print(op_list)
+        init_sol=clean(content)
+        dir_models="EVRPTW-main-DBProduction\models\Convolutional\models_10fold_DEF\\12000_Train\_15ep_32bs"
+        models=os.listdir(dir_models)  
+        for i in range(len(models)):
+            models[i] = models[i].replace(".csv.h5", "") 
+        predictions={}
+        for i in range(len(op_list)):
+
+            pos=i
+            # select operator to be applied
+            #pos = random.choices(range(len(op_list)),weights)[0]
+            move = op_list[i].__class__.__name__
+            if move in models:
+                #print("Models here")
+                m_file=dir_models+"\\"+move+".csv.h5"
+                model = keras.models.load_model(m_file)
+            y_pred = model.predict(init_sol.reshape(1, -1))
+            predictions[pos]=y_pred[0][0]
+        print(predictions)
+        #randomizzazione pesata
+
+        migliorative = {k: v for k, v in predictions.items() if v > 0.5}
+        if len(migliorative)>0:
+            chiavi = list(migliorative.keys())
+            valori = list(migliorative.values())
+            chiave_scelta = random.choices(chiavi, weights=valori, k=1)[0]
+
+
+            best=op_list[chiave_scelta]
+            pos=chiave_scelta
+            #print(best)
+            #print(chiave_scelta)
+        else:pos = random.choices(range(len(op_list)),weights)[0]; best=op_list[pos]
+        if best==None:  pos = random.choices(range(len(op_list)),weights)[0]; best=op_list[pos]
+        return best, pos
 
     def apply_destroy_and_repair(self, x: Solution, iteration: int):
         # apply the first stage of the alns
@@ -663,18 +726,30 @@ class Solver:
             }
         }
         if (iteration % self.configs["number_iterations_station_removal"]) == 0:
+            if iteration==2000 or iteration==3000 or iteration==4000 or iteration==5000 or iteration==6000 or iteration==7000 or iteration==8000 or iteration==9000 or iteration==10000 or iteration==11000 or iteration==12000:
+                # SELECT DESTROY STATION
+                station_destroy, pos_destroy = self._select_method_1(
+                    self.operators["station_destroy"]["operators"],
+                    self.operators["station_destroy"]["weight"]
+                )
 
-            # SELECT DESTROY STATION
-            station_destroy, pos_destroy = self._select_method(
-                self.operators["station_destroy"]["operators"],
-                self.operators["station_destroy"]["weight"]
-            )
+                # SELECT REPAIR STATION
+                station_repair, pos_repair = self._select_method_1(
+                    self.operators["station_repair"]["operators"],
+                    self.operators["station_destroy"]["weight"]
+                )
+            else: 
+                # SELECT DESTROY STATION
+                station_destroy, pos_destroy = self._select_method_0(
+                    self.operators["station_destroy"]["operators"],
+                    self.operators["station_destroy"]["weight"]
+                )
 
-            # SELECT REPAIR STATION
-            station_repair, pos_repair = self._select_method(
-                self.operators["station_repair"]["operators"],
-                self.operators["station_destroy"]["weight"]
-            )
+                # SELECT REPAIR STATION
+                station_repair, pos_repair = self._select_method_0(
+                    self.operators["station_repair"]["operators"],
+                    self.operators["station_destroy"]["weight"]
+                )
 
             # APPLY DESTROY STATION
             currtime = time.time()
@@ -694,15 +769,27 @@ class Solver:
             print(f'Applying STATION repair [{station_repair}] {time_elapsed_repair*10**6:.2f} \u03BCs')
 
         # SELECT DESTROY CUSTOMER
-        customer_destroy, pos_destroy = self._select_method(
-            self.operators["customer_destroy"]["operators"], 
-            self.operators["customer_destroy"]["weight"]
-        )
-        # SELECT REPAIR CUSTOMER
-        customer_repair, pos_repair = self._select_method(
-            self.operators["customer_repair"]["operators"],
-            self.operators["customer_repair"]["weight"]
-        )
+        if iteration==2000 or iteration==3000 or iteration==4000 or iteration==5000 or iteration==6000 or iteration==7000 or iteration==8000 or iteration==9000 or iteration==10000 or iteration==11000 or iteration==12000:
+
+            customer_destroy, pos_destroy = self._select_method_1(
+                self.operators["customer_destroy"]["operators"], 
+                self.operators["customer_destroy"]["weight"]
+            )
+            # SELECT REPAIR CUSTOMER
+            customer_repair, pos_repair = self._select_method_1(
+                self.operators["customer_repair"]["operators"],
+                self.operators["customer_repair"]["weight"]
+            )
+        else:
+            customer_destroy, pos_destroy = self._select_method_0(
+                self.operators["customer_destroy"]["operators"], 
+                self.operators["customer_destroy"]["weight"]
+            )
+            # SELECT REPAIR CUSTOMER
+            customer_repair, pos_repair = self._select_method_0(
+                self.operators["customer_repair"]["operators"],
+                self.operators["customer_repair"]["weight"]
+            )
         # APPLY REMOVE CUSTOMER
         # customer_destroy = self.operators["customer_destroy"]["operators"][10]
         currtime = time.time()

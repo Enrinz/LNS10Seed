@@ -20,7 +20,7 @@
     },
     "nb_rectangle_zones" : 4,
     "alns_decay_parameter" : 0.9,
-    "number_iterations" : 10,
+    "number_iterations" : 12000,
     "number_iterations_station_removal" : 5,
     "number_iterations_customer_op_update_weights" : 25001,
     "number_iterations_station_op_update_weights" : 25001,
