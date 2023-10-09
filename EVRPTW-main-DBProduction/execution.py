@@ -4,8 +4,7 @@ from time import time
 import csv
 import os
 
-
-db_Output = open('DB-test1.csv', 'w', newline='')
+db_Output = open('DB-Output12000_hybrid.csv', 'w', newline='')
 writer = csv.writer(db_Output)
 writer.writerow(["Instance's Name","Iteration","Seed","Initial Solution","OFIS","Moves","OFFS","OF_Diff","Exe_Time_d-r","Avg_Battery_Status","Avg_SoC","Avg_Num_Charge",
                  "Avg_Vehicle_Capacity","Avg_Customer_Demand","Num_Vehicles","Avg_Service_Time","Avg_Customer_TimeWindow","Var_Customer_TimeWindow",
@@ -35,7 +34,7 @@ def initialize_file_settings():
         "overtime_cost_denominator" : 6,
         "rho_low" : 0.3,
         "rho_high" : 0.7,
-        "instance_file_name" : "c101_21_100.txt",
+        "instance_file_name" : "c106_21_100.txt",
         "service_time_generation_type" : "basic",
         "basic_service_time" : {
             "R" : { "low" : 8,

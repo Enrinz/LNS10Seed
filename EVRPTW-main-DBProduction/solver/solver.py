@@ -341,7 +341,7 @@ class Solver:
             finishTime = time.time()
 
             # Inizializzazione DB
-            db_Output = open('DB-test1.csv', 'a', newline='')
+            db_Output = open('DB-Output12000_hybrid.csv', 'a', newline='')
             writer = csv.writer(db_Output)
             
             # Instance's Name
@@ -352,7 +352,8 @@ class Solver:
             write_final_row["Iteration"]=iteration
             # Initial Solution
             write_final_row["Initial Solution"] = x_current.generate_route_id()
-
+            with open(path_soluzione_iniziale, 'w') as file:
+                file.write(str(x_current.generate_route_id()))
             # OFIS
             if(iteration == 1):
                 write_final_row["OFIS"] = OF_x_0
