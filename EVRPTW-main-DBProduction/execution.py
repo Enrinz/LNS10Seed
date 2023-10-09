@@ -5,7 +5,7 @@ import csv
 import os
 
 
-db_Output = open('DB-test.csv', 'w', newline='')
+db_Output = open('DB-test1.csv', 'w', newline='')
 writer = csv.writer(db_Output)
 writer.writerow(["Instance's Name","Iteration","Seed","Initial Solution","OFIS","Moves","OFFS","OF_Diff","Exe_Time_d-r","Avg_Battery_Status","Avg_SoC","Avg_Num_Charge",
                  "Avg_Vehicle_Capacity","Avg_Customer_Demand","Num_Vehicles","Avg_Service_Time","Avg_Customer_TimeWindow","Var_Customer_TimeWindow",
@@ -54,17 +54,40 @@ def one_hour_running_code():
     files_list = []
     for file in os.listdir('EVRPTW-main-DBProduction\dataTestSeed'):
         files_list.append(file)
-
+    seeds=[123, 42, 29, 3, 18, 7, 11, 25, 9, 14]
     # Makes each instance running 10 times for 10 iterations
     for i in range(len(files_list)):
         for j in range(10): 
             try:
                 os.system("python EVRPTW-main-DBProduction\main.py")
+                #change seed every of 10 times
+                fileR_main = open('EVRPTW-main-DBProduction\main.py', 'r')
+                filedata_main = fileR_main.read()
+                fileR_main.close()
+                if j+1 < len(seeds):
+                            filedata_main = filedata_main.replace(str(seeds[j]), str(seeds[j+1]))
+
+                fileW_main = open('EVRPTW-main-DBProduction\main.py', 'w')
+                fileW_main.write(filedata_main)
+                fileW_main.close()    
+                #end change seed     
             except Exception as e:
                 print(e)
 
                 pass
-        break
+        #break
+
+        #reset seed to 123
+        fileR_main = open('EVRPTW-main-DBProduction\main.py', 'r')
+        filedata_main = fileR_main.read()
+        fileR_main.close()
+
+        filedata_main = filedata_main.replace(str(seeds[-1]), str(seeds[0]))
+
+        fileW_main = open('EVRPTW-main-DBProduction\main.py', 'w')
+        fileW_main.write(filedata_main)
+        fileW_main.close()    
+        #end reset 
         fileR = open('EVRPTW-main-DBProduction\etc\settings.json', 'r')
         filedata = fileR.read()
         fileR.close()
