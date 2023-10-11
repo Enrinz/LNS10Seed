@@ -34,7 +34,7 @@ def initialize_file_settings():
         "overtime_cost_denominator" : 6,
         "rho_low" : 0.3,
         "rho_high" : 0.7,
-        "instance_file_name" : "c106_21_100.txt",
+        "instance_file_name" : "r107_21_100.txt",
         "service_time_generation_type" : "basic",
         "basic_service_time" : {
             "R" : { "low" : 8,
