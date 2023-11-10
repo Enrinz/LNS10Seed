@@ -341,7 +341,7 @@ class Solver:
             finishTime = time.time()
 
             # Inizializzazione DB
-            db_Output = open('DB-Output12000_hybrid.csv', 'a', newline='')
+            db_Output = open('DB-Output12000_S2000_S1000_hybrid.csv', 'a', newline='')
             writer = csv.writer(db_Output)
             
             # Instance's Name
