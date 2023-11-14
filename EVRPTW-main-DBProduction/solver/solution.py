@@ -25,11 +25,15 @@ class Solution:
                 node_nmb = node_idx
                 break
         self.routes[route_idx].remove(node)
-        self.update_route(route_idx, node_nmb = node_nmb)
+        if node_nmb < len(self.routes[route_idx]):
+            self.update_route(route_idx, node_nmb=node_nmb)
+        else:
+            self.update_route(route_idx)
+
 
     def remove_nodes_from_route(self, lst_nodes : list, lst_route_idx : list):
         for route_idx in lst_route_idx:
-            self.routes[int(route_idx)] = [x for x in self.routes[route_idx] if x['name'] not in lst_nodes]
+            self.routes[int(route_idx)] = [x for x in self.routes[int(route_idx)] if x['name'] not in lst_nodes]
             self.update_route(int(route_idx))
 
     def remove_route(self, route_idx):
@@ -181,12 +185,19 @@ class Solution:
             # remove all the element from the after the considered node
             for _ in range(node_nmb-1, len(self.arrival_times[route_idx])):
                 self.arrival_times[route_idx].pop()
+
+
             # remove from soc list the elements after node_nmb
             for _ in range(node_nmb, len(self.vehicles[route_idx]["SoC_list"])):
-                self.vehicles[route_idx]['SoC_list'].pop()
+                if node_nmb < len(self.arrival_times[route_idx]):
+                    self.vehicles[route_idx]['SoC_list'].pop()
+
+
             # set the time of the vehicle at node_nmb + service time of node_nmb
-            if len(self.arrival_times[route_idx]) != 0 and self.routes[route_idx][node_nmb]["isCustomer"]:
+            if 0 <= route_idx < len(self.arrival_times) and len(self.arrival_times[route_idx]) != 0 and self.routes[route_idx][node_nmb]["isCustomer"]:
                 self.vehicles[route_idx]["time"] = self.arrival_times[route_idx][-1] + self.instance.customers_dict[self.routes[route_idx][node_nmb]["name"]]["ServiceTime"]
+            else:
+                print("Invalid route index or empty arrival times list.")
             if len(self.arrival_times[route_idx]) != 0 and self.routes[route_idx][node_nmb]["isStation"]:
                 self.vehicles[route_idx]["time"] = self.arrival_times[route_idx][-1] + self.instance.stations_dict[self.routes[route_idx][node_nmb]["name"]]["ServiceTime"]
             if len(self.arrival_times[route_idx]) != 0 and self.routes[route_idx][node_nmb]["isDepot"]:

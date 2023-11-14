@@ -4,7 +4,10 @@ from time import time
 import csv
 import os
 
-db_Output = open('DB-Output12000_S2000_S1000_hybrid.csv', 'w', newline='')
+
+# C:/Users/enrin/AppData/Local/Programs/Python/Python39/python.exe "c:/Users/enrin/Desktop/LNS10Seed/EVRPTW-main-DBProduction/execution.py" > output.txt 2>&1
+
+db_Output = open('DB-Output12000_S2000_S1000_hybrid_worse.csv', 'w', newline='')
 writer = csv.writer(db_Output)
 writer.writerow(["Instance's Name","Iteration","Seed","Initial Solution","OFIS","Moves","OFFS","OF_Diff","Exe_Time_d-r","Avg_Battery_Status","Avg_SoC","Avg_Num_Charge",
                  "Avg_Vehicle_Capacity","Avg_Customer_Demand","Num_Vehicles","Avg_Service_Time","Avg_Customer_TimeWindow","Var_Customer_TimeWindow",

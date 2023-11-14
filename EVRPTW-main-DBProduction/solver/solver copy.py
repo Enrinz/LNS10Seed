@@ -296,9 +296,8 @@ class Solver:
                 x_current = copy.deepcopy(x_previous)
         '''
 
-
+        #Code for always accept worse solution if move is selected thanks to the model
         for iteration in range(1, self.configs["number_iterations"] + 1):
-
             print("Iteration no", iteration, "of", self.configs["number_iterations"])
             flag=False
 
@@ -306,34 +305,55 @@ class Solver:
             algorithms_applied,flag = self.apply_destroy_and_repair(
                 x_current, iteration,flag
             )
-            #print(x_current)
-            #Se la mossa applicata è randomica: 
-            if flag==False:
-                OF_x_current = x_current.compute_OF()
-                # SOLUTION UPDATE
-                if x_current.check_solution_feasibility():
-                    # apply second stage and compute recourse cost
-                    el_t = time.time()
-                    recourse_cost = self.apply_second_stage_evaluation(
-                        x_current
-                    )
-                    print(f"Recourse time: {(time.time()-el_t)*10**6:.2f} \u03BCs ")
-                    OF_x_current += recourse_cost
-                    # quit()
-                    # if there is an improvement, update previous solution
-                    if OF_x_current < OF_x_previous:
+            OF_x_current = x_current.compute_OF()
+
+
+            # SOLUTION UPDATE
+
+            if x_current.check_solution_feasibility():
+
+                # apply second stage and compute recourse cost
+                el_t = time.time()
+                recourse_cost = self.apply_second_stage_evaluation(
+                    x_current
+                )
+                print(f"Recourse time: {(time.time()-el_t)*10**6:.2f} \u03BCs ")
+                OF_x_current += recourse_cost
+                # quit()
+                # if there is an improvement, update the previous solution
+
+                if OF_x_current < OF_x_previous:
+
+                    x_previous = copy.deepcopy(x_current)
+                    OF_x_previous = OF_x_current
+                    # assign score to the operators based on "improvement successful"
+                    self.update_score_operator(self.operators, self.configs["alns_scores"]["current_better"], algorithms_applied)
+                    # if the solution is the best yet, update it
+                    if OF_x_previous < OF_x_best:
+
+                        x_best = copy.deepcopy(x_current)
+                        OF_x_best = OF_x_current
+                        # assign score to the operators based on "best solution"
+                        self.update_score_operator(self.operators, self.configs["alns_scores"]["global_best"], algorithms_applied)
+                else:
+
+                    # apply simulated annealing to always accept a worse solution if flag is true
+                    if flag==True:
+
                         x_previous = copy.deepcopy(x_current)
                         OF_x_previous = OF_x_current
-                        # assign score to the operators based on "improvement successful"
+
                         self.update_score_operator(self.operators, self.configs["alns_scores"]["current_better"], algorithms_applied)
-                        # if the solution is the best yet update it
-                        if OF_x_previous < OF_x_best:
-                            x_best = copy.deepcopy(x_current)
-                            OF_x_best = OF_x_current
-                            # assign score to the operators based on "best solution"
-                            self.update_score_operator(self.operators, self.configs["alns_scores"]["global_best"], algorithms_applied)
+
+
+                        x_best = copy.deepcopy(x_current)
+                        OF_x_best = OF_x_current
+
+                        self.update_score_operator(self.operators, self.configs["alns_scores"]["global_best"], algorithms_applied)
+
                     else:
-                        # apply simulated annealing in order to maybe accept worse solution
+
+                        # apply simulated annealing to maybe accept a worse solution
                         OF_difference = OF_x_current - OF_x_previous
                         r = np.random.uniform()
                         if r < math.exp((-OF_difference) / (self.configs["annealing_parameters"]["k"] * T)):
@@ -341,58 +361,17 @@ class Solver:
                             OF_x_previous = OF_x_current
                             # assign score to the operators based on "solution accepted"
                             self.update_score_operator(self.operators, self.configs["alns_scores"]["solution_accepted"], algorithms_applied)
-                            T = T / ( 1 + ( T * self.configs["annealing_parameters"]["frazionamento"] ) )
+                            T = T / (1 + (T * self.configs["annealing_parameters"]["frazionamento"]))
                         else:
                             # assign score to the operators based on "solution rejected"
                             self.update_score_operator(self.operators, self.configs["alns_scores"]["solution_rejected"], algorithms_applied)
                             x_current = copy.deepcopy(x_previous)
-                else:
-                    # assign score to the operators based on "solution rejected"
-                    self.update_score_operator(self.operators, self.configs["alns_scores"]["solution_rejected"], algorithms_applied)
-                    x_current = copy.deepcopy(x_previous)
-
-
-            #Se la mossa applicata è guidata dal modello: 
             else:
-                feasible=False
-                max=0
-                while feasible != True:
 
-                    '''
-                    x_previous = copy.deepcopy(x_current)
-                    OF_x_previous = OF_x_current
-                    # assign score to the operators based on "improvement successful"
-                    self.update_score_operator(self.operators, self.configs["alns_scores"]["current_better"], algorithms_applied)
-                    # if the solution is the best yet update it
-                    if OF_x_previous < OF_x_best:
-                        x_best = copy.deepcopy(x_current)
-                        OF_x_best = OF_x_current
-                        # assign score to the operators based on "best solution"
-                        self.update_score_operator(self.operators, self.configs["alns_scores"]["global_best"], algorithms_applied)
-                    '''
+                # assign score to the operators based on "solution rejected"
+                self.update_score_operator(self.operators, self.configs["alns_scores"]["solution_rejected"], algorithms_applied)
+                x_current = copy.deepcopy(x_previous)
 
-                    algorithms_applied,flag = self.apply_destroy_and_repair(x_current, iteration,flag)
-                    max+=1
-                    OF_x_current = x_current.compute_OF()
-                    
-                    # apply second stage and compute recourse cost
-                    el_t = time.time()
-                    recourse_cost = self.apply_second_stage_evaluation(x_current)
-                    if(x_current.check_solution_feasibility==True):
-                        feasible=True
-                    print(f"Recourse time: {(time.time()-el_t)*10**6:.2f} \u03BCs ")
-                    OF_x_current += recourse_cost
-
-                    # quit()
-                    # if there is an improvement, update the previous solution
-                    x_previous = copy.deepcopy(x_current)
-                    OF_x_previous = OF_x_current
-                    x_best = copy.deepcopy(x_current)
-                    OF_x_best = OF_x_current
-
-                    if max==10:
-                        print("******* MAX ATTEMPTS *******")
-                        break
             #other code
 
             # UPDATE WEIGHT OPERATOR CUSTOMER
@@ -829,7 +808,7 @@ class Solver:
             }
         }
         if (iteration % self.configs["number_iterations_station_removal"]) == 0:
-            if iteration==2000 or iteration==3000 or iteration==4000 or iteration==5000 or iteration==6000 or iteration==7000 or iteration==8000 or iteration==9000 or iteration==10000 or iteration==11000 or iteration==12000:
+            if iteration==10 or iteration==20 or iteration==30 or iteration==5000 or iteration==6000 or iteration==7000 or iteration==8000 or iteration==9000 or iteration==10000 or iteration==11000 or iteration==12000:
                 flag=True
                 # SELECT DESTROY STATION
                 station_destroy, pos_destroy = self._select_method_1(
@@ -874,7 +853,7 @@ class Solver:
             print(f'Applying STATION repair [{station_repair}] {time_elapsed_repair*10**6:.2f} \u03BCs')
 
         # SELECT DESTROY CUSTOMER
-        if iteration==2000 or iteration==3000 or iteration==4000 or iteration==5000 or iteration==6000 or iteration==7000 or iteration==8000 or iteration==9000 or iteration==10000 or iteration==11000 or iteration==12000:
+        if iteration==10 or iteration==20 or iteration==30 or iteration==5000 or iteration==6000 or iteration==7000 or iteration==8000 or iteration==9000 or iteration==10000 or iteration==11000 or iteration==12000:
             flag=True
             customer_destroy, pos_destroy = self._select_method_1(
                 self.operators["customer_destroy"]["operators"], 
