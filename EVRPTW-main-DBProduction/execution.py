@@ -7,7 +7,7 @@ import os
 
 # C:/Users/enrin/AppData/Local/Programs/Python/Python39/python.exe "c:/Users/enrin/Desktop/LNS10Seed/EVRPTW-main-DBProduction/execution.py" > output.txt 2>&1
 
-db_Output = open('DB-Output_rc108_12000_S2000_S1000_original.csv', 'w', newline='')
+db_Output = open('DB-Output_NEW_12000_S2000_S1000_original.csv', 'w', newline='')
 writer = csv.writer(db_Output)
 writer.writerow(["Instance's Name","Iteration","Seed","Initial Solution","OFIS","Moves","OFFS","OF_Diff","Exe_Time_d-r","Avg_Battery_Status","Avg_SoC","Avg_Num_Charge",
                  "Avg_Vehicle_Capacity","Avg_Customer_Demand","Num_Vehicles","Avg_Service_Time","Avg_Customer_TimeWindow","Var_Customer_TimeWindow",
@@ -37,7 +37,7 @@ def initialize_file_settings():
         "overtime_cost_denominator" : 6,
         "rho_low" : 0.3,
         "rho_high" : 0.7,
-        "instance_file_name" : "rc108_21_100.txt",
+        "instance_file_name" : "c107_21_100.txt",
         "service_time_generation_type" : "basic",
         "basic_service_time" : {
             "R" : { "low" : 8,
