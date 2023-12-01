@@ -197,7 +197,7 @@ class Solution:
             if 0 <= route_idx < len(self.arrival_times) and len(self.arrival_times[route_idx]) != 0 and self.routes[route_idx][node_nmb]["isCustomer"]:
                 self.vehicles[route_idx]["time"] = self.arrival_times[route_idx][-1] + self.instance.customers_dict[self.routes[route_idx][node_nmb]["name"]]["ServiceTime"]
             else:
-                print("Invalid route index or empty arrival times list.")
+                pass #print("Invalid route index or empty arrival times list.")
             if len(self.arrival_times[route_idx]) != 0 and self.routes[route_idx][node_nmb]["isStation"]:
                 self.vehicles[route_idx]["time"] = self.arrival_times[route_idx][-1] + self.instance.stations_dict[self.routes[route_idx][node_nmb]["name"]]["ServiceTime"]
             if len(self.arrival_times[route_idx]) != 0 and self.routes[route_idx][node_nmb]["isDepot"]:

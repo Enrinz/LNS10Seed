@@ -245,7 +245,10 @@ class Solver:
         # compute expected_waiting_time at every station
 
         starting_time = time.time()
-        '''
+
+
+        #start original
+        '''       
         for iteration in range(1, self.configs["number_iterations"] + 1):
             print("Iteration no", iteration, "of", self.configs["number_iterations"])
             flag=False
@@ -295,20 +298,27 @@ class Solver:
                 self.update_score_operator(self.operators, self.configs["alns_scores"]["solution_rejected"], algorithms_applied)
                 x_current = copy.deepcopy(x_previous)
         '''
+        #end original
 
+        # INSERIRE Mod per accettare le soluzioni peggiorative nelle iterazioni 2000 in poi con 1000 step
 
         for iteration in range(1, self.configs["number_iterations"] + 1):
-
-            print("Iteration no", iteration, "of", self.configs["number_iterations"])
             flag=False
+            print("Iteration no", iteration, "of", self.configs["number_iterations"])
+            if (iteration==2000 or iteration==3000 or iteration==4000 or iteration==5000 or iteration==6000 or iteration==7000 or iteration==8000 or iteration==9000 or iteration==10000 or iteration==11000 or iteration==12000):
+                flag=False       #flag=True se voglio applicare il modello con select_method_1
+                                #flag=False se voglio il codice originale
+                                #flag=True se voglio il codice originale che accetta soluzioni peggiorative,
+                                #ma modifica select_method_1 in select_method_0 dentro apply_destroy_and_repair
+            else: flag=False
 
-            # apply the first stage of the alns
-            algorithms_applied,flag = self.apply_destroy_and_repair(
-                x_current, iteration,flag
-            )
             #print(x_current)
             #Se la mossa applicata è randomica: 
             if flag==False:
+                # apply the first stage of the alns
+                algorithms_applied = self.apply_destroy_and_repair(
+                    x_current, iteration,flag
+                )
                 OF_x_current = x_current.compute_OF()
                 # SOLUTION UPDATE
                 if x_current.check_solution_feasibility():
@@ -359,6 +369,7 @@ class Solver:
                 while feasible != True:
 
                     '''
+
                     x_previous = copy.deepcopy(x_current)
                     OF_x_previous = OF_x_current
                     # assign score to the operators based on "improvement successful"
@@ -369,30 +380,39 @@ class Solver:
                         OF_x_best = OF_x_current
                         # assign score to the operators based on "best solution"
                         self.update_score_operator(self.operators, self.configs["alns_scores"]["global_best"], algorithms_applied)
+
                     '''
 
-                    algorithms_applied,flag = self.apply_destroy_and_repair(x_current, iteration,flag)
+                    algorithms_applied = self.apply_destroy_and_repair(x_current, iteration,flag)
                     max+=1
                     OF_x_current = x_current.compute_OF()
                     
-                    # apply second stage and compute recourse cost
-                    el_t = time.time()
-                    recourse_cost = self.apply_second_stage_evaluation(x_current)
-                    if(x_current.check_solution_feasibility==True):
+                    if x_current.check_solution_feasibility():
                         feasible=True
-                    print(f"Recourse time: {(time.time()-el_t)*10**6:.2f} \u03BCs ")
-                    OF_x_current += recourse_cost
+                        el_t = time.time()
+                        recourse_cost = self.apply_second_stage_evaluation(x_current)
+                        print(f"Recourse time: {(time.time()-el_t)*10**6:.2f} \u03BCs ")
+                        OF_x_current += recourse_cost
 
-                    # quit()
-                    # if there is an improvement, update the previous solution
-                    x_previous = copy.deepcopy(x_current)
-                    OF_x_previous = OF_x_current
-                    x_best = copy.deepcopy(x_current)
-                    OF_x_best = OF_x_current
+                        x_previous = copy.deepcopy(x_current)
+                        OF_x_previous = OF_x_current
+                        # assign score to the operators based on "improvement successful"
+                        self.update_score_operator(self.operators, self.configs["alns_scores"]["current_better"], algorithms_applied)
+
+                        x_best = copy.deepcopy(x_current)
+                        OF_x_best = OF_x_current
+                        # assign score to the operators based on "best solution"
+                        self.update_score_operator(self.operators, self.configs["alns_scores"]["global_best"], algorithms_applied)                        
+                    else:
+                        # assign score to the operators based on "solution rejected"
+                        self.update_score_operator(self.operators, self.configs["alns_scores"]["solution_rejected"], algorithms_applied)
+                        x_current = copy.deepcopy(x_previous)        
 
                     if max==10:
                         print("******* MAX ATTEMPTS *******")
                         break
+        
+        #END Mod
             #other code
 
             # UPDATE WEIGHT OPERATOR CUSTOMER
@@ -443,7 +463,7 @@ class Solver:
             finishTime = time.time()
 
             # Inizializzazione DB
-            db_Output = open('DB-Output12000_S2000_S1000_hybrid_worse.csv', 'a', newline='')
+            db_Output = open('DB-Output_rc108_12000_S2000_S1000_original.csv', 'a', newline='')
             writer = csv.writer(db_Output)
             
             # Instance's Name
@@ -829,21 +849,21 @@ class Solver:
             }
         }
         if (iteration % self.configs["number_iterations_station_removal"]) == 0:
-            if iteration==2000 or iteration==3000 or iteration==4000 or iteration==5000 or iteration==6000 or iteration==7000 or iteration==8000 or iteration==9000 or iteration==10000 or iteration==11000 or iteration==12000:
-                flag=True
+
+            if(flag==True):#true usa il modello/originale worse
                 # SELECT DESTROY STATION
-                station_destroy, pos_destroy = self._select_method_1(
+                station_destroy, pos_destroy = self._select_method_0(
                     self.operators["station_destroy"]["operators"],
                     self.operators["station_destroy"]["weight"]
                 )
 
                 # SELECT REPAIR STATION
-                station_repair, pos_repair = self._select_method_1(
+                station_repair, pos_repair = self._select_method_0(
                     self.operators["station_repair"]["operators"],
                     self.operators["station_destroy"]["weight"]
                 )
             else: 
-                flag=False
+
                 # SELECT DESTROY STATION
                 station_destroy, pos_destroy = self._select_method_0(
                     self.operators["station_destroy"]["operators"],
@@ -874,19 +894,17 @@ class Solver:
             print(f'Applying STATION repair [{station_repair}] {time_elapsed_repair*10**6:.2f} \u03BCs')
 
         # SELECT DESTROY CUSTOMER
-        if iteration==2000 or iteration==3000 or iteration==4000 or iteration==5000 or iteration==6000 or iteration==7000 or iteration==8000 or iteration==9000 or iteration==10000 or iteration==11000 or iteration==12000:
-            flag=True
-            customer_destroy, pos_destroy = self._select_method_1(
+        if (flag==True):
+            customer_destroy, pos_destroy = self._select_method_0(
                 self.operators["customer_destroy"]["operators"], 
                 self.operators["customer_destroy"]["weight"]
             )
             # SELECT REPAIR CUSTOMER
-            customer_repair, pos_repair = self._select_method_1(
+            customer_repair, pos_repair = self._select_method_0(
                 self.operators["customer_repair"]["operators"],
                 self.operators["customer_repair"]["weight"]
             )
         else:
-            flag=False
             customer_destroy, pos_destroy = self._select_method_0(
                 self.operators["customer_destroy"]["operators"], 
                 self.operators["customer_destroy"]["weight"]
@@ -925,7 +943,7 @@ class Solver:
         # print(f'Applying CUSTOMER destroy [{customer_destroy} {time_elapsed_destroy:.2f}] and repair [{customer_repair} {time_elapsed_repair:.2f}]')
         x.remove_empty_routes()
         print("FLAG in apply_destroy_and_repair",flag)
-        return couples,flag
+        return couples
 
     def apply_second_stage_evaluation(self, solution: Solution):
         # apply the second stage and compute the average recourse cost

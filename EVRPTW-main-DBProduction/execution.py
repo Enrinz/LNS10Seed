@@ -7,7 +7,7 @@ import os
 
 # C:/Users/enrin/AppData/Local/Programs/Python/Python39/python.exe "c:/Users/enrin/Desktop/LNS10Seed/EVRPTW-main-DBProduction/execution.py" > output.txt 2>&1
 
-db_Output = open('DB-Output12000_S2000_S1000_hybrid_worse.csv', 'w', newline='')
+db_Output = open('DB-Output_rc108_12000_S2000_S1000_original.csv', 'w', newline='')
 writer = csv.writer(db_Output)
 writer.writerow(["Instance's Name","Iteration","Seed","Initial Solution","OFIS","Moves","OFFS","OF_Diff","Exe_Time_d-r","Avg_Battery_Status","Avg_SoC","Avg_Num_Charge",
                  "Avg_Vehicle_Capacity","Avg_Customer_Demand","Num_Vehicles","Avg_Service_Time","Avg_Customer_TimeWindow","Var_Customer_TimeWindow",
@@ -37,7 +37,7 @@ def initialize_file_settings():
         "overtime_cost_denominator" : 6,
         "rho_low" : 0.3,
         "rho_high" : 0.7,
-        "instance_file_name" : "c106_21_100.txt",
+        "instance_file_name" : "rc108_21_100.txt",
         "service_time_generation_type" : "basic",
         "basic_service_time" : {
             "R" : { "low" : 8,
@@ -56,11 +56,12 @@ def one_hour_running_code():
     files_list = []
     for file in os.listdir('EVRPTW-main-DBProduction\dataTestSeed'):
         files_list.append(file)
-    seeds=[123, 42, 29, 3, 18, 7, 11, 25, 9, 14]
+    seeds=[ 123, 42, 29, 3, 18, 7, 11, 25, 9, 14]  #seeds=[123, 42, 29, 3, 18, 7, 11, 25, 9, 14]
     # Makes each instance running 10 times for 10 iterations
     for i in range(len(files_list)):
-        for j in range(10): 
+        for j in range(len(seeds)): 
             try:
+                print("Seed: ",str(seeds[j]))
                 os.system("python EVRPTW-main-DBProduction\main.py")
                 #change seed every of 10 times
                 fileR_main = open('EVRPTW-main-DBProduction\main.py', 'r')
@@ -68,10 +69,9 @@ def one_hour_running_code():
                 fileR_main.close()
                 if j+1 < len(seeds):
                             filedata_main = filedata_main.replace(str(seeds[j]), str(seeds[j+1]))
-
                 fileW_main = open('EVRPTW-main-DBProduction\main.py', 'w')
                 fileW_main.write(filedata_main)
-                fileW_main.close()    
+                fileW_main.close()   
                 #end change seed     
             except Exception as e:
                 print(e)
@@ -90,6 +90,7 @@ def one_hour_running_code():
         fileW_main.write(filedata_main)
         fileW_main.close()    
         #end reset 
+
         fileR = open('EVRPTW-main-DBProduction\etc\settings.json', 'r')
         filedata = fileR.read()
         fileR.close()

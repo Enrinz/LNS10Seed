@@ -1,0 +1,48 @@
+        for iteration in range(1, self.configs["number_iterations"] + 1):
+            print("Iteration no", iteration, "of", self.configs["number_iterations"])
+            flag=False
+            # apply the first stage of the alns
+            algorithms_applied,flag = self.apply_destroy_and_repair(
+                x_current, iteration,flag
+            )
+            OF_x_current = x_current.compute_OF()
+            # SOLUTION UPDATE
+            if x_current.check_solution_feasibility():
+                # apply second stage and compute recourse cost
+                el_t = time.time()
+                recourse_cost = self.apply_second_stage_evaluation(
+                    x_current
+                )
+                print(f"Recourse time: {(time.time()-el_t)*10**6:.2f} \u03BCs ")
+                OF_x_current += recourse_cost
+                # quit()
+                # if there is an improvement, update previous solution
+                if OF_x_current < OF_x_previous:
+                    x_previous = copy.deepcopy(x_current)
+                    OF_x_previous = OF_x_current
+                    # assign score to the operators based on "improvement successful"
+                    self.update_score_operator(self.operators, self.configs["alns_scores"]["current_better"], algorithms_applied)
+                    # if the solution is the best yet update it
+                    if OF_x_previous < OF_x_best:
+                        x_best = copy.deepcopy(x_current)
+                        OF_x_best = OF_x_current
+                        # assign score to the operators based on "best solution"
+                        self.update_score_operator(self.operators, self.configs["alns_scores"]["global_best"], algorithms_applied)
+                else:
+                    # apply simulated annealing in order to maybe accept worse solution
+                    OF_difference = OF_x_current - OF_x_previous
+                    r = np.random.uniform()
+                    if r < math.exp((-OF_difference) / (self.configs["annealing_parameters"]["k"] * T)):
+                        x_previous = copy.deepcopy(x_current)
+                        OF_x_previous = OF_x_current
+                        # assign score to the operators based on "solution accepted"
+                        self.update_score_operator(self.operators, self.configs["alns_scores"]["solution_accepted"], algorithms_applied)
+                        T = T / ( 1 + ( T * self.configs["annealing_parameters"]["frazionamento"] ) )
+                    else:
+                        # assign score to the operators based on "solution rejected"
+                        self.update_score_operator(self.operators, self.configs["alns_scores"]["solution_rejected"], algorithms_applied)
+                        x_current = copy.deepcopy(x_previous)
+            else:
+                # assign score to the operators based on "solution rejected"
+                self.update_score_operator(self.operators, self.configs["alns_scores"]["solution_rejected"], algorithms_applied)
+                x_current = copy.deepcopy(x_previous)

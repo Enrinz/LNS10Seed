@@ -1,0 +1,16 @@
+Error durante la generazione di Output12000_S2000_S1000_original_worse.csv
+
+
+Iteration no 9800 of 12000
+Applying STATION destroy [RandomDestroyStation] 1003.74 μs
+Applying STATION repair [ProbabilisticBestRepairStation] 217180.01 μs
+Traceback (most recent call last):
+  File "C:\Users\enrin\Desktop\LNS10Seed\EVRPTW-main-DBProduction\main.py", line 33, in <module>
+    solution, final_OF = solver.solve(ran_seed)
+  File "C:\Users\enrin\Desktop\LNS10Seed\EVRPTW-main-DBProduction\solver\solver.py", line 319, in solve
+    algorithms_applied = self.apply_destroy_and_repair(
+  File "C:\Users\enrin\Desktop\LNS10Seed\EVRPTW-main-DBProduction\solver\solver.py", line 920, in apply_destroy_and_repair
+    removed_customers = customer_destroy.apply(x)
+  File "C:\Users\enrin\Desktop\LNS10Seed\EVRPTW-main-DBProduction\solver\ALNS_operators\destroy.py", line 124, in apply
+    cost = np.abs(solution.instance.customers_dict[node["name"]]["ReadyTime"] - solution.arrival_times[i][j])
+IndexError: list index out of range
