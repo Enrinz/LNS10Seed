@@ -27,7 +27,7 @@
     "number_iterations_waiting_update" : 1,
     "worst_removal_determinism_factor" : 2,
     "shaw_removal_determinism_factor" : 2,
-    "greedy_confidence" : 0.8,
+    "greedy_confidence" : 0.8,  
     "gamma_c" : 3,
     "gamma_s" : 1,
     "consider_pickup" : "No",
